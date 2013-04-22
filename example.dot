@@ -1,0 +1,37 @@
+#!/usr/bin/env dotlang
+"hello world" print;
+.func-printhelloworld def { arg
+    "hello world" print
+}
+
+.func-mergesort def { .seq arg
+    seq. length 1 eq if { seq. return }
+    seq. length 2 intdiv .split set
+    0 split. seq. slice mergesort .a set
+    split. seq slice mergesort .b set
+    a. b. merge
+}
+
+.func-merge def { .a .b arg
+    vector .out set
+    .( a. b. or ) while {
+        a. first | b. first greater if {
+            .a .b swap
+        }
+        .a iternext out. push
+    }
+    .out return
+}
+
+# something like pop macro
+
+.func-iternext def { .iter arg
+    iter. call next (.item .iternext list) set
+    iternext. iter. set
+    item. return
+}
+.func-swap def { .a .b arg
+    a. call .tmp set
+    b. call a. set
+    tmp. b. set
+}
