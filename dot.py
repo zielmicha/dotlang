@@ -8,6 +8,7 @@ class StackFrame:
         self.stack = []
         self.code = code
         self.ptr = 0
+        self.call_size = 0
 
     def step(self):
         if self.ptr == len(self.code):
@@ -58,11 +59,22 @@ class StackFrame:
 
     def call(self, func, *args):
         if isinstance(func, UserFunction):
-            return StackFrame(func.code, func.env, self)
+            frame = StackFrame.make_call(func, self)
+            return frame
+        elif hasattr(func, 'call_with_frame'):
+            result = func(self, *args)
+            return result
         else:
             result = func(*args)
             self.stack.append(result)
             return self
+
+    @staticmethod
+    def make_call(func, parent, *args):
+        frame = StackFrame(func.code, func.env, parent)
+        frame.call_size = len(args)
+        frame.stack += args
+        return frame
 
 class RootFrame:
     def __init__(self, env, code):
@@ -75,6 +87,33 @@ class RootFrame:
 
     def pass_result(self, val):
         self.result = val
+
+class WhileFrame:
+    call_with_frame = True
+
+    def __init__(self, parent, cond, body):
+        self.cond = cond
+        self.body = body
+        self.parent = parent
+        self.cond_ran = False
+        self.halt = False
+
+    def step(self):
+        if self.halt:
+            return self.parent
+        if self.cond_ran:
+            self.cond_ran = False
+            return StackFrame.make_call(self.body, self)
+        else:
+            self.cond_ran = True
+            return StackFrame.make_call(self.cond, self)
+
+    def pass_result(self, val):
+        if self.cond_ran:
+            if not val:
+                self.halt = True
+
+builtins['func-while'] = WhileFrame
 
 if __name__ == '__main__':
     from dotparse import parse
