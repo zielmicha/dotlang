@@ -25,16 +25,26 @@ class Tokenizer:
                 raise TokenizeError('failed to tokenize %r' % string)
             yield match
 
+REMOVE_BACK = Ellipsis
+
 def gen_as_list(func):
     def wrapper(*args, **kwargs):
-        return list(func(*args, **kwargs))
+        result = []
+        for item in func(*args, **kwargs):
+            if item == REMOVE_BACK:
+                result.pop()
+            else:
+                result.append(item)
+        return result
+
     return wrapper
 
 dot_tokenizer = Tokenizer([
     ('paren', r'[(){}]'),
     ('space', r'[ \t]+'),
     ('newline', r'\n'),
-    ('ident', r'[.A-Za-z0-9]+'),
+    ('number', r'[0-9]+'),
+    ('ident', r'[.A-Za-z0-9-]+'),
     ('comment', r'(#(.+)$|/\*((.|\n)*?)\*/)'),
     ('string', r'"([^"]+)"'),
     ('semicolon', r';'),
@@ -72,6 +82,7 @@ def match_dots(tokens):
             if is_dot:
                 if paren_type != ')':
                     raise ParseError('not expecting dot before %r paren' % paren_type, info)
+                yield REMOVE_BACK
                 yield ('lambda', newval, info)
                 is_dot = False
             else:
@@ -107,7 +118,7 @@ def infer_semicolons(tokens):
             if kind in group_kinds:
                 val = infer_semicolons(val)
             result.append((kind, val, info))
-    if result[-1][0] == 'semicolon':
+    if result and result[-1][0] == 'semicolon':
         del result[-1:]
     return result
 

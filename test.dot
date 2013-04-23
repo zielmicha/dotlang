@@ -1,2 +1,19 @@
 # This is Hello World program in Dotlang
 "Hello world!" print
+
+.foobar print
+1 2 add print
+
+"print 1" func-print. call
+1 .foo set
+foo. print
+
+(1 2 add) print
+
+.("lambda" print) .func-my set
+my
+
+.func-a def {
+
+}
+func-a. print

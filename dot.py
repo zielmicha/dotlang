@@ -1,5 +1,5 @@
 #!/usr/bin/python
-from dotlib import Environ, builtins
+from dotlib import Environ, builtins, Ref, UserFunction
 
 class StackFrame:
     def __init__(self, code, env, parent):
@@ -17,7 +17,11 @@ class StackFrame:
         else:
             instr = self.code[self.ptr]
             self.ptr += 1
-            return self.eval(*instr)
+            try:
+                return self.eval(*instr)
+            except:
+                print 'while evaluating', self.code[self.ptr-1]
+                raise
 
     def eval(self, kind, val, info):
         if kind == 'string':
@@ -27,11 +31,38 @@ class StackFrame:
             func = self.env['func-' + val]
             args = self.stack[:]
             self.stack[:] = []
+            return self.call(func, *args)
+        elif kind == 'semicolon':
+            self.stack[:] = []
+            return self
+        elif kind == 'ref':
+            self.stack.append(Ref(self.env, val))
+            return self
+        elif kind == 'deref':
+            v = self.env[val]
+            self.stack.append(v)
+            return self
+        elif kind == 'number':
+            self.stack.append(int(val))
+            return self
+        elif kind == 'lambda':
+            self.stack.append(UserFunction(self.env, val))
+            return self
+        elif kind == 'expr':
+            return StackFrame(val, self.env, self)
+        else:
+            raise RuntimeError(kind)
+
+    def pass_result(self, v):
+        self.stack.append(v)
+
+    def call(self, func, *args):
+        if isinstance(func, UserFunction):
+            return StackFrame(func.code, func.env, self)
+        else:
             result = func(*args)
             self.stack.append(result)
             return self
-        else:
-            raise RuntimeError(kind)
 
 class RootFrame:
     def __init__(self, env, code):
