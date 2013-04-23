@@ -59,7 +59,7 @@ class StackFrame:
 
     def call(self, func, *args):
         if isinstance(func, UserFunction):
-            frame = StackFrame.make_call(func, self)
+            frame = StackFrame.make_call(func, self, *args)
             return frame
         elif hasattr(func, 'call_with_frame'):
             result = func(self, *args)
@@ -115,8 +115,28 @@ class WhileFrame:
 
 builtins['func-while'] = WhileFrame
 
+def arg(frame, *args):
+    call_args = args[:frame.call_size]
+    def_args = args[frame.call_size:]
+    new_env = Environ(parents=[frame.env])
+    assert all( isinstance(r, Ref) for r in def_args )
+    def_args_corrected = [
+        Ref(new_env, r.name) for r in def_args
+    ]
+    if len(def_args_corrected) != len(call_args):
+        raise ValueError('function expected %d parameters, got %d' % (
+            len(def_args_corrected), len(call_args)))
+    for out, val in zip(def_args_corrected, call_args):
+        out.set(val)
+    frame.env = new_env
+    return frame
+
+arg.call_with_frame = True
+builtins['func-arg'] = arg
+
 if __name__ == '__main__':
     from dotparse import parse
     from sys import stdin
+    from dot import * # __main__ --> dot
     code = parse(stdin.read())
     RootFrame(Environ(parents=[builtins]), code).run()

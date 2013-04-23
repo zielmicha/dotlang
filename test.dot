@@ -23,3 +23,17 @@ my
 .(counter. 0 neq) while {
     counter. 1 sub .counter set
 }
+
+.func-greeter def { .name arg
+    "hello" name. print
+}
+
+"Michał" greeter
+
+0 .foo set
+.func-test def { arg
+    1 .foo set
+}
+test
+foo. 0 eq assert
+1 0 neq assert

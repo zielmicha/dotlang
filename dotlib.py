@@ -48,9 +48,15 @@ builtins['func-mul'] = reducer(lambda a, b: a + b)
 builtins['func-sub'] = lambda a, b: a - b
 builtins['func-neq'] = lambda a, b: a != b
 builtins['func-eq'] = lambda a, b: a == b
+builtins['func-not'] = lambda a: not a
 
 builtins['func-call'] = lambda *args: args[-1](*args[:-1])
 builtins['func-set'] = lambda val, ref: ref.set(val)
+
+def func_assert(a):
+    assert a
+
+builtins['func-assert'] = func_assert
 
 def func_def(name, body):
     if isinstance(name, Ref):
