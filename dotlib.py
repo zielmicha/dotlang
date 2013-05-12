@@ -48,6 +48,10 @@ builtins['func-mul'] = reducer(lambda a, b: a + b)
 builtins['func-sub'] = lambda a, b: a - b
 builtins['func-neq'] = lambda a, b: a != b
 builtins['func-eq'] = lambda a, b: a == b
+builtins['func-leq'] = lambda a, b: a <= b
+builtins['func-le'] = lambda a, b: a < b
+builtins['func-geq'] = lambda a, b: a >= b
+builtins['func-ge'] = lambda a, b: a > b
 builtins['func-not'] = lambda a: not a
 
 builtins['func-call'] = lambda *args: args[-1](*args[:-1])

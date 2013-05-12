@@ -1,0 +1,17 @@
+# Recrusive fibonnaci
+
+"Showcase of O(2^n) fibbonaci numbers computing function." print
+"You should observe around 15 times speedup if using PyPy instead of CPython." print
+print
+
+.func-fib def { .n arg
+    n. 1 leq if { 1 } {
+        (n. 1 sub fib) (n. 2 sub fib) add
+    }
+}
+
+0 .n set
+.(n. 25 leq) while {
+    n. "fib =" | n. fib print
+    n. 1 add .n set
+}

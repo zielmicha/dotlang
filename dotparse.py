@@ -144,11 +144,11 @@ def fold_bars(tokens):
 def move_lambdas(tokens):
     result = []
     for kind, val, info in tokens:
+        if kind in group_kinds:
+            val = move_lambdas(val)
         if kind == 'lambda_back':
             result.insert(-1, ('lambda', val, info))
         else:
-            if kind in group_kinds:
-                val = move_lambdas(val)
             result.append((kind, val, info))
     return result
 

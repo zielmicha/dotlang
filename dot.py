@@ -115,6 +115,18 @@ class WhileFrame:
 
 builtins['func-while'] = WhileFrame
 
+def if_(frame, cond, then, else_=None):
+    if cond:
+        return StackFrame.make_call(then, frame)
+    else:
+        if else_:
+            return StackFrame.make_call(else_, frame)
+        else:
+            return frame
+
+if_.call_with_frame = True
+builtins['func-if'] = if_
+
 def arg(frame, *args):
     call_args = args[:frame.call_size]
     def_args = args[frame.call_size:]
@@ -136,7 +148,8 @@ builtins['func-arg'] = arg
 
 if __name__ == '__main__':
     from dotparse import parse
-    from sys import stdin
+    from sys import stdin, argv
     from dot import * # __main__ --> dot
+    if len(argv) == 2: stdin = open(argv[1])
     code = parse(stdin.read())
     RootFrame(Environ(parents=[builtins]), code).run()
