@@ -56,6 +56,15 @@ builtins['func-not'] = lambda a: not a
 
 builtins['func-call'] = lambda *args: args[-1](*args[:-1])
 builtins['func-set'] = lambda val, ref: ref.set(val)
+builtins['func-list'] = lambda *args: args
+
+def func_multi(*args):
+    funclist = args[-1]
+    # TODO: use streams
+    # (streams are not yet implemented and I just come up with name)
+    return map(lambda func: func(*args[:-1]), funclist)
+
+builtins['func-multi'] = func_multi
 
 def func_assert(a):
     assert a
@@ -77,3 +86,6 @@ class UserFunction(object):
 
     def __repr__(self):
         return '<dotlib.UserFunction %r at %x>' % (self.name, id(self))
+
+    def __call__(self, *args):
+        pass

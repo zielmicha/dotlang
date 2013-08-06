@@ -1,5 +1,6 @@
 #!/usr/bin/python
 from dotlib import Environ, builtins, Ref, UserFunction
+import operator
 
 class StackFrame:
     def __init__(self, code, env, parent):
@@ -29,10 +30,7 @@ class StackFrame:
             self.stack.append(val.strip('"'))
             return self
         elif kind == 'call':
-            func = self.env['func-' + val]
-            args = self.stack[:]
-            self.stack[:] = []
-            return self.call(func, *args)
+            return self.eval_call(val, info)
         elif kind == 'semicolon':
             self.stack[:] = []
             return self
@@ -53,6 +51,21 @@ class StackFrame:
             return StackFrame(val, self.env, self)
         else:
             raise RuntimeError(kind)
+
+    def eval_call(self, val, info):
+        try:
+            func = self.env['func-' + val]
+        except KeyError:
+            func = self.function_not_found(val)
+        args = self.stack[:]
+        self.stack[:] = []
+        return self.call(func, *args)
+
+    def function_not_found(self, name):
+        if name.startswith('@'):
+            return operator.attrgetter(name[1:])
+        else:
+            return lambda self, *args: getattr(self, name)(*args)
 
     def pass_result(self, v):
         self.stack.append(v)
