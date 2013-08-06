@@ -41,4 +41,4 @@ foo. 0 eq assert
 #0 | 1 2 list print
 #func-test. @env | .(@parents) .(@data) list multi print
 
-"1 2 3" split map { int } print
+"1 2 3" split map { int } sum print

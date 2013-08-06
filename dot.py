@@ -65,7 +65,13 @@ class StackFrame:
         if name.startswith('@'):
             return operator.attrgetter(name[1:])
         else:
-            return lambda self, *args: getattr(self, name)(*args)
+            def helper(self, *args):
+                try:
+                    target = getattr(self, name)
+                except AttributeError:
+                    raise AttributeError('no function named %r' % name)
+                return target(*args)
+            return helper
 
     def pass_result(self, v):
         self.stack.append(v)

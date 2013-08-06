@@ -1,3 +1,4 @@
+from functools import partial
 
 class Environ(object):
     def __init__(self, parents=[]):
@@ -54,6 +55,9 @@ builtins['func-geq'] = lambda a, b: a >= b
 builtins['func-ge'] = lambda a, b: a > b
 builtins['func-not'] = lambda a: not a
 
+builtins['func-int'] = lambda x: int(x)
+builtins['func-sum'] = sum
+
 builtins['func-call'] = lambda *args: args[-1](*args[:-1])
 builtins['func-set'] = lambda val, ref: ref.set(val)
 builtins['func-list'] = lambda *args: args
@@ -65,6 +69,8 @@ def func_multi(*args):
     return map(lambda func: func(*args[:-1]), funclist)
 
 builtins['func-multi'] = func_multi
+
+builtins['func-map'] = lambda *args: map(partial(args[-1]), *args[:-1])
 
 def func_assert(a):
     assert a
