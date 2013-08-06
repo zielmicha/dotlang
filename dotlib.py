@@ -44,7 +44,7 @@ def reducer(a):
     return lambda *args: reduce(a, args)
 
 builtins['func-add'] = reducer(lambda a, b: a + b)
-builtins['func-mul'] = reducer(lambda a, b: a + b)
+builtins['func-mul'] = reducer(lambda a, b: a * b)
 builtins['func-sub'] = lambda a, b: a - b
 builtins['func-neq'] = lambda a, b: a != b
 builtins['func-eq'] = lambda a, b: a == b
