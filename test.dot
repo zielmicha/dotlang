@@ -39,4 +39,4 @@ foo. 0 eq assert
 1 0 neq assert
 #func-test. @env @parents print
 #0 | 1 2 list print
-func-test. @env | .(@parents) .(@data) list multi
+func-test. @env | .(@parents) .(@data) list multi print
