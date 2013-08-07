@@ -1,5 +1,5 @@
 #!/usr/bin/python
-from dotlib import Environ, builtins, Ref, UserFunction
+from dot.lib.core import Environ, builtins, Ref, UserFunction
 
 class StackFrame:
     def __init__(self, code, env, parent):
@@ -154,11 +154,3 @@ def arg(frame, *args):
 
 arg.call_with_frame = True
 builtins['func-arg'] = arg
-
-if __name__ == '__main__':
-    from dotparse import parse
-    from sys import stdin, argv
-    from dot import * # __main__ --> dot
-    if len(argv) == 2: stdin = open(argv[1])
-    code = parse(stdin.read())
-    RootFrame(Environ(parents=[builtins]), code).run()

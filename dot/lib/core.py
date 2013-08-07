@@ -121,8 +121,8 @@ class UserFunction(object):
         return '<dotlib.UserFunction %r at %x>' % (self.name, id(self))
 
     def __call__(self, *args):
-        import dot
-        frame = dot.RootFrame(self.env, self.code)
+        import dot.runtime
+        frame = dot.runtime.RootFrame(self.env, self.code)
         frame.frame.stack += args
         return frame.run()
 
