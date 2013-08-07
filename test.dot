@@ -51,3 +51,5 @@ func-greeter. @env @data "func-test" at 13 eq assert
 1 2 3 list | 6 7 8 list map { add } | 7 9 11 list eq assert
 
 1 2 3 list $list add 6 eq assert
+
+9 .a set; a. 9 eq assert
