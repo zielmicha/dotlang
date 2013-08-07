@@ -33,6 +33,7 @@ my
 0 .foo set
 .func-test def { arg
     1 .foo set
+    3
 }
 test
 foo. 0 eq assert
@@ -41,4 +42,12 @@ foo. 0 eq assert
 #0 | 1 2 list print
 #func-test. @env | .(@parents) .(@data) list multi print
 
+func-test. @env @data "func-test" at call 3 eq assert
+func-test. @env @data "func-test" atref 13 $swap set
+func-greeter. @env @data "func-test" at 13 eq assert
+
 "1 2 3" split map { int } sum print
+1 2 3 list multi { len } { sum } map { 2 mul } print
+1 2 3 list | 6 7 8 list map { add } | 7 9 11 list eq assert
+
+1 2 3 list $list add 6 eq assert

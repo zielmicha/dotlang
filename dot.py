@@ -1,6 +1,5 @@
 #!/usr/bin/python
 from dotlib import Environ, builtins, Ref, UserFunction
-import operator
 
 class StackFrame:
     def __init__(self, code, env, parent):
@@ -62,16 +61,7 @@ class StackFrame:
         return self.call(func, *args)
 
     def function_not_found(self, name):
-        if name.startswith('@'):
-            return operator.attrgetter(name[1:])
-        else:
-            def helper(self, *args):
-                try:
-                    target = getattr(self, name)
-                except AttributeError:
-                    raise AttributeError('no function named %r' % name)
-                return target(*args)
-            return helper
+        return self.env['func-func-not-found'](name)
 
     def pass_result(self, v):
         self.stack.append(v)

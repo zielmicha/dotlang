@@ -1,4 +1,5 @@
 from functools import partial
+import operator
 
 class Environ(object):
     def __init__(self, parents=[]):
@@ -34,6 +35,17 @@ class Ref(object):
     def __repr__(self):
         return '<dotlib.Ref %r env=%r>' % (self.name, self.env)
 
+class BuiltinRef(object):
+    def __init__(self, fget, fset):
+        self.fget = fget
+        self.fset = fset
+
+    def __call__(self):
+        return self.fget()
+
+    def set(self, val):
+        self.fset(val)
+
 builtins = {}
 
 def func_print(*args):
@@ -57,16 +69,31 @@ builtins['func-not'] = lambda a: not a
 
 builtins['func-int'] = lambda x: int(x)
 builtins['func-sum'] = sum
+builtins['func-len'] = len
+builtins['func-abs'] = abs
+builtins['func-at'] = lambda x, val: x[val]
+
+class AtRef(object):
+    def __init__(self, x, key):
+        self.x = x
+        self.key = key
+
+    def __call_(self):
+        return self.x[key]
+
+    def set(self, val):
+        self.x[self.key] = val
+
+builtins['func-atref'] = AtRef
 
 builtins['func-call'] = lambda *args: args[-1](*args[:-1])
 builtins['func-set'] = lambda val, ref: ref.set(val)
-builtins['func-list'] = lambda *args: args
+builtins['func-list'] = lambda *args: list(args)
 
-def func_multi(*args):
-    funclist = args[-1]
+def func_multi(arg, *funclist):
     # TODO: use streams
     # (streams are not yet implemented and I just come up with name)
-    return map(lambda func: func(*args[:-1]), funclist)
+    return map(lambda func: func(arg), funclist)
 
 builtins['func-multi'] = func_multi
 
@@ -98,3 +125,32 @@ class UserFunction(object):
         frame = dot.RootFrame(self.env, self.code)
         frame.frame.stack += args
         return frame.run()
+
+def func_not_found(name):
+    if name.startswith('@'):
+        return operator.attrgetter(name[1:])
+    else:
+        def helper(self, *args):
+            try:
+                target = getattr(self, name)
+            except AttributeError:
+                raise AttributeError('no function named %r' % name)
+            return target(*args)
+        return helper
+
+builtins['func-func-not-found'] = func_not_found
+
+def dollar_swap(frame, *args):
+    frame.stack += reversed(args)
+    return frame
+
+dollar_swap.call_with_frame = True
+
+def dollar_list(frame, items):
+    frame.stack += list(items)
+    return frame
+
+dollar_list.call_with_frame = True
+
+builtins['func-$swap'] = dollar_swap
+builtins['func-$list'] = dollar_list

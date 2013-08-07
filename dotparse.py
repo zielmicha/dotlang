@@ -44,7 +44,7 @@ dot_tokenizer = Tokenizer([
     ('space', r'[ \t]+'),
     ('newline', r'\n'),
     ('number', r'[0-9]+'),
-    ('ident', r'[.A-Za-z0-9_@!?-]+'),
+    ('ident', r'[.A-Za-z0-9_@$!?-]+'),
     ('comment', r'(#(.+)$|/\*((.|\n)*?)\*/)'),
     ('string', r'"([^"]+)"'),
     ('semicolon', r';'),
