@@ -1,7 +1,7 @@
 from sys import argv
 
 from dot.parse import parse
-from dot.runtime import * # __main__ --> dot
+from dot.interpreter import * # __main__ --> dot
 
 def run_string(s):
     code = parse(s)
