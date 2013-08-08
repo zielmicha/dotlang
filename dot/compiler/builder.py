@@ -1,10 +1,11 @@
 
 class Builder:
-    def __init__(self):
+    def __init__(self, filename='<none>'):
         self.ops = []
         self.label_i = 0
         self.info = None
         self.stack_size = 0
+        self.filename = filename
 
     def visit(self, ast):
         if isinstance(ast, list):
@@ -21,7 +22,7 @@ class Builder:
     def visit_call(self, name):
         stack = self.stack_size
         self.stack_size = 0
-        self.add_push('call', name, self.stack_size)
+        self.add_push('call', name, stack)
 
     def visit_semicolon(self, _):
         for i in xrange(self.stack_size):
