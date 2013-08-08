@@ -130,7 +130,9 @@ def func_not_found(name):
     if name.startswith('@'):
         return operator.attrgetter(name[1:])
     else:
-        def helper(self, *args):
+        def helper(self=Ellipsis, *args):
+            if self == Ellipsis:
+                raise AttributeError('no function named %r' % name)
             try:
                 target = getattr(self, name)
             except AttributeError:
