@@ -1,14 +1,19 @@
 import byteplay as bp
+import marshal
+import types
 
 def assemble(builder):
     code_list = []
 
     last_lineno = 0
+    first_lineno = None
     for op in builder.ops:
         lineno = op[0]
         if lineno != last_lineno:
             code_list.append((bp.SetLineno, lineno))
             last_lineno = lineno
+            if not first_lineno:
+                first_lineno = lineno
         name = op[1]
 
         res = globals()['assemble_' + name](*op[2:])
@@ -24,7 +29,7 @@ def assemble(builder):
         newlocals=True,
         name='dotlang',
         filename=builder.filename,
-        firstlineno=0,
+        firstlineno=first_lineno,
         docstring=None)
 
 def assemble_const(s):
@@ -46,7 +51,8 @@ def assemble_call(name, arg_count):
             # stack = [args, result]
             (bp.DUP_TOP, None),
             # stack = [args, result, result]
-            (bp.LOAD_CONST, NotImplemented),
+            (bp.LOAD_CONST, NotImplemented), # this opcode doesn't marshal
+            #(bp.LOAD_GLOBAL, 'NotImplemented'), # but this does
             # stack = [args, result, result, NotImplemented]
             (bp.COMPARE_OP, 'is'),
             # stack = [args, result, success?]
@@ -68,6 +74,19 @@ def assemble_call(name, arg_count):
             # stack = [result]
             (end, None),
         ]
+
+def dump_pyc(py_code):
+    magic = '\x03\xf3\r\n'
+    timestamp = '\0\0\0\0'
+    print py_code.co_consts
+    py_code = types.CodeType(py_code.co_argcount, py_code.co_nlocals,
+                             py_code.co_stacksize, py_code.co_flags,
+                             py_code.co_code, py_code.co_consts,
+                             py_code.co_names, py_code.co_varnames,
+                             py_code.co_filename, py_code.co_name,
+                             py_code.co_firstlineno, py_code.co_lnotab,
+                             py_code.co_freevars, py_code.co_cellvars)
+    return magic + timestamp + marshal.dumps(py_code)
 
 if __name__ == '__main__':
     from sys import argv, stdin

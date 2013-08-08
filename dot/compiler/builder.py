@@ -17,7 +17,7 @@ class Builder:
             getattr(self, 'visit_' + kind)(val)
 
     def visit_string(self, s):
-        self.add_push('const', s)
+        self.add_push('const', s.strip('"'))
 
     def visit_call(self, name):
         stack = self.stack_size

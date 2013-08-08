@@ -8,3 +8,4 @@ def execute(executable):
     return eval(executable, globals)
 
 builtins['_dotlang_call'] = call
+builtins['NotImplemented'] = NotImplemented
