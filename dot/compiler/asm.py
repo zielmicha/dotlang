@@ -35,6 +35,41 @@ def assemble(builder):
 def assemble_const(s):
     return [(bp.LOAD_CONST, s)]
 
+def assemble_pop():
+    return [(bp.POP_TOP, None)]
+
+def assemble_get_ref(name):
+    get_code = bp.Code(
+        code=[(bp.LOAD_DEREF, name),
+              (bp.RETURN_VALUE, None)],
+        freevars=[name],
+        args=[], varargs=False, varkwargs=False,
+        newlocals=False,
+        name='get_ref__%s' % name,
+        filename='?', firstlineno=0, docstring='')
+    set_code = bp.Code(
+        code=[(bp.LOAD_FAST, 'value'),
+              (bp.STORE_DEREF, name),
+              (bp.LOAD_CONST, None),
+              (bp.RETURN_VALUE, None)],
+        freevars=[name],
+        args=['value'], varargs=False, varkwargs=False,
+        newlocals=False,
+        name='set_ref__%s' % name,
+        filename='?', firstlineno=0, docstring='')
+
+    return [
+        (bp.LOAD_GLOBAL, '_dotlang_make_ref'),
+        (bp.LOAD_CLOSURE, name),
+        (bp.BUILD_TUPLE, 1),
+        (bp.LOAD_CONST, get_code),
+        (bp.MAKE_CLOSURE, 0),
+        (bp.LOAD_CLOSURE, name),
+        (bp.BUILD_TUPLE, 1),
+        (bp.LOAD_CONST, set_code),
+        (bp.MAKE_CLOSURE, 0),
+        (bp.CALL_FUNCTION, 2)]
+
 def assemble_call(name, arg_count):
     call_success = bp.Label()
     end = bp.Label()
@@ -78,14 +113,6 @@ def assemble_call(name, arg_count):
 def dump_pyc(py_code):
     magic = '\x03\xf3\r\n'
     timestamp = '\0\0\0\0'
-    print py_code.co_consts
-    py_code = types.CodeType(py_code.co_argcount, py_code.co_nlocals,
-                             py_code.co_stacksize, py_code.co_flags,
-                             py_code.co_code, py_code.co_consts,
-                             py_code.co_names, py_code.co_varnames,
-                             py_code.co_filename, py_code.co_name,
-                             py_code.co_firstlineno, py_code.co_lnotab,
-                             py_code.co_freevars, py_code.co_cellvars)
     return magic + timestamp + marshal.dumps(py_code)
 
 if __name__ == '__main__':
@@ -103,7 +130,7 @@ if __name__ == '__main__':
 
     ast = dot.parse.parse(stdin.read())
     b = dot.compiler.builder.Builder(filename)
-    b.visit(ast)
+    b.add_code(ast)
     bp_code = assemble(b)
     #print bp_code.code
     py_code = bp_code.to_code()

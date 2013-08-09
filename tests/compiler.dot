@@ -1,1 +1,2 @@
 "hello world" print
+9 .foo set
