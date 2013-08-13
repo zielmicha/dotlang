@@ -2,6 +2,8 @@
 # interpreter:
 # CPython - 55 s
 # PyPy - 4.5 s
+# compiler:
+# CPython - 1.3 s
 
 "Showcase of O(2^n) fibbonaci numbers computing function." print
 "You should observe around 15 times speedup if using PyPy instead of CPython." print

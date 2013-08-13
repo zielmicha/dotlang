@@ -18,3 +18,20 @@ def func_while(condition, body):
         body()
 
 builtins['func-while'] = func_while
+
+def _dotlang_arg(args, varnames):
+    if len(args) != len(varnames):
+        raise ValueError('function expected %d parameters (%s), got %d' %
+                         (len(varnames), varnames, len(args)))
+
+    return args
+
+builtins['_dotlang_arg'] = _dotlang_arg
+
+def func_if(cond, then, else_):
+    if cond:
+        return then()
+    elif else_:
+        return else_()
+
+builtins['func-if'] = func_if

@@ -1,0 +1,7 @@
+
+.func-t def { .i arg
+    i. 8 print
+}
+
+11 .i set
+8 t

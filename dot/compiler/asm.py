@@ -42,11 +42,16 @@ def assemble_const(s):
 def assemble_pop():
     return [(bp.POP_TOP, None)]
 
-def assemble_deref(name):
-    return [(bp.LOAD_DEREF, name)]
+def assemble_deref(name, toplevel, is_cell):
+    if toplevel:
+        return [(bp.LOAD_GLOBAL, name)]
+    elif is_cell:
+        return [(bp.LOAD_DEREF, name)]
+    else:
+        return [(bp.LOAD_FAST, name)]
 
 def assemble_make_lambda(builder):
-    freevars = list(set(builder.names))
+    freevars = list(builder.free_names)
     code = assemble(builder, function=True,
                     freevars=freevars)
     ops = []
@@ -57,39 +62,48 @@ def assemble_make_lambda(builder):
             (bp.MAKE_CLOSURE, 0)]
     return ops
 
-def assemble_get_ref(name):
+def assemble_get_ref(name, toplevel):
     get_code = bp.Code(
-        code=[(bp.LOAD_DEREF, name),
+        code=[(bp.LOAD_GLOBAL if toplevel else bp.LOAD_DEREF, name),
               (bp.RETURN_VALUE, None)],
-        freevars=[name],
+        freevars=[] if toplevel else [name],
         args=[], varargs=False, varkwargs=False,
         newlocals=False,
         name='get_ref__%s' % name,
         filename='?', firstlineno=0, docstring='')
     set_code = bp.Code(
         code=[(bp.LOAD_FAST, 'value'),
-              (bp.STORE_DEREF, name),
+              (bp.STORE_GLOBAL if toplevel else bp.STORE_DEREF, name),
               (bp.LOAD_CONST, None),
               (bp.RETURN_VALUE, None)],
-        freevars=[name],
+        freevars=[] if toplevel else [name],
         args=['value'], varargs=False, varkwargs=False,
         newlocals=False,
         name='set_ref__%s' % name,
         filename='?', firstlineno=0, docstring='')
 
-    return [
-        (bp.LOAD_GLOBAL, '_dotlang_make_ref'),
-        (bp.LOAD_CLOSURE, name),
-        (bp.BUILD_TUPLE, 1),
-        (bp.LOAD_CONST, get_code),
-        (bp.MAKE_CLOSURE, 0),
-        (bp.LOAD_CLOSURE, name),
-        (bp.BUILD_TUPLE, 1),
-        (bp.LOAD_CONST, set_code),
-        (bp.MAKE_CLOSURE, 0),
-        (bp.CALL_FUNCTION, 2)]
+    if toplevel:
+        return [
+            (bp.LOAD_GLOBAL, '_dotlang_make_ref'),
+            (bp.LOAD_CONST, get_code),
+            (bp.MAKE_FUNCTION, 0),
+            (bp.LOAD_CONST, set_code),
+            (bp.MAKE_FUNCTION, 0),
+            (bp.CALL_FUNCTION, 2)]
+    else:
+        return [
+            (bp.LOAD_GLOBAL, '_dotlang_make_ref'),
+            (bp.LOAD_CLOSURE, name),
+            (bp.BUILD_TUPLE, 1),
+            (bp.LOAD_CONST, get_code),
+            (bp.MAKE_CLOSURE, 0),
+            (bp.LOAD_CLOSURE, name),
+            (bp.BUILD_TUPLE, 1),
+            (bp.LOAD_CONST, set_code),
+            (bp.MAKE_CLOSURE, 0),
+            (bp.CALL_FUNCTION, 2)]
 
-def assemble_call(name, arg_count, var_stack):
+def assemble_call(name, arg_count, var_stack, toplevel):
     call_success = bp.Label()
     end = bp.Label()
     ops = [(bp.BUILD_TUPLE, arg_count),]
@@ -101,6 +115,17 @@ def assemble_call(name, arg_count, var_stack):
             # stack = [func, args]
             (bp.CALL_FUNCTION_VAR, 0),
         ]
+    return ops
+
+def assemble_call_arg(refs):
+    ops = [
+        (bp.LOAD_CONST, refs),
+        (bp.LOAD_NAME, '_dotlang_arg'),
+        (bp.ROT_THREE, None),
+        (bp.CALL_FUNCTION, 2),
+        (bp.UNPACK_SEQUENCE, len(refs))]
+    for name, is_cell in refs:
+        ops.append((bp.STORE_DEREF if is_cell else bp.STORE_FAST, name))
     return ops
 
 def dump_pyc(py_code):
@@ -125,6 +150,6 @@ if __name__ == '__main__':
     b = dot.compiler.builder.Builder(filename)
     b.add_code(ast)
     bp_code = assemble(b)
-    #pprint.pprint(bp_code.code)
+    #pprint.pprint(bp_code.code[9][1].freevars)
     py_code = bp_code.to_code()
     dot.runtime.execute(py_code)
