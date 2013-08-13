@@ -28,6 +28,15 @@ def _dotlang_arg(args, varnames):
 
 builtins['_dotlang_arg'] = _dotlang_arg
 
+def _dotlang_fallback(args, funcname):
+    if funcname.startswith('@'):
+        assert len(args) == 1
+        return getattr(args[0], funcname[1:])
+    else:
+        return getattr(args[0], funcname)(*args[1:])
+
+builtins['_dotlang_fallback'] = _dotlang_fallback
+
 def func_if(cond, then, else_):
     if cond:
         return then()

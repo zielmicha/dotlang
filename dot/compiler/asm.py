@@ -104,16 +104,33 @@ def assemble_get_ref(name, toplevel):
             (bp.CALL_FUNCTION, 2)]
 
 def assemble_call(name, arg_count, var_stack, toplevel):
-    call_success = bp.Label()
+    except_start = bp.Label()
+    except_end = bp.Label()
     end = bp.Label()
     ops = [(bp.BUILD_TUPLE, arg_count),]
     if var_stack:
         ops += [(bp.BINARY_ADD, None)]
-    ops += [(bp.LOAD_NAME, 'func-' + name),
+    ops += [(bp.SETUP_EXCEPT, except_start),
+            (bp.LOAD_NAME, 'func-' + name), # [args, func]
+            (bp.STORE_FAST, '__func'),
+            (bp.POP_BLOCK, None),
+            (bp.JUMP_FORWARD, except_end),
+            (except_start, None),
+            (bp.POP_TOP, None), (bp.POP_TOP, None), (bp.POP_TOP, None),
+            (bp.LOAD_CONST, name),
+            (bp.LOAD_NAME, '_dotlang_fallback'),
+            (bp.ROT_THREE, None),
+            (bp.CALL_FUNCTION, 2),
+            (bp.JUMP_FORWARD, end),
+            (except_end, None),
+
+            (bp.LOAD_FAST, '__func'),
             # stack = [args, func]
             (bp.ROT_TWO, None),
             # stack = [func, args]
             (bp.CALL_FUNCTION_VAR, 0),
+            (bp.JUMP_FORWARD, end),
+            (end, None),
         ]
     return ops
 
