@@ -145,10 +145,32 @@ def assemble_call_arg(refs):
         ops.append((bp.STORE_DEREF if is_cell else bp.STORE_FAST, name))
     return ops
 
+
+def assemble_store_helper(name):
+    return [(bp.STORE_FAST, name)]
+
+def assemble_load_helper(name):
+    return [(bp.LOAD_FAST, name)]
+
+# For $list
+def assemble_make_var_stack(count):
+    return [(bp.BUILD_TUPLE, count)]
+
+def assemble_merge_var_stack(count):
+    return [(bp.BUILD_TUPLE, count),
+            (bp.BINARY_ADD, None)]
+
+def assemble_merge_var_args_list():
+    return [(bp.LOAD_GLOBAL, 'tuple'),
+            (bp.ROT_TWO, None),
+            (bp.CALL_FUNCTION, 1),
+            (bp.BINARY_ADD, None)]
+
 def dump_pyc(py_code):
     magic = '\x03\xf3\r\n'
     timestamp = '\0\0\0\0'
     return magic + timestamp + marshal.dumps(py_code)
+
 
 if __name__ == '__main__':
     from sys import argv, stdin

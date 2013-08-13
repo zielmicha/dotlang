@@ -44,3 +44,5 @@ def func_if(cond, then, else_):
         return else_()
 
 builtins['func-if'] = func_if
+
+builtins['tuple'] = tuple # for varargs conversions

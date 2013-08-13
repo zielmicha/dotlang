@@ -47,8 +47,8 @@ class Builder:
 
     def visit_call(self, name):
         stack = self.stack_size
-        self.stack_size = 0
         if name == 'arg':
+            self.stack_size = 0
             if len(self.ref_stack) != stack:
                 raise ValueError('arg not expected here (or not given reference, stack=%d, refs=%s)' % (
                     stack, self.ref_stack))
@@ -59,10 +59,24 @@ class Builder:
             # discard everything before
             self.ops = []
             self.add('call_arg', [ (ref, ref in self.cells) for ref in self.ref_stack ])
+            self.var_stack = False
+        elif name == '$list':
+            if not stack:
+                raise ValueError('cannot call $list on empty (or variable) stack')
+            self.add('store_helper', '__unpack')
+            if self.var_stack:
+                self.add('merge_var_stack', stack - 1)
+            else:
+                self.add('make_var_stack', stack - 1)
+            self.add('load_helper', '__unpack')
+            self.add('merge_var_args_list')
+            self.var_stack = True
+            self.stack_size = 0
         else:
+            self.stack_size = 0
             self.add_push('call', name, stack, self.var_stack,
                           name in self.toplevel_names)
-        self.var_stack = False
+            self.var_stack = False
 
     def visit_semicolon(self, _):
         for i in xrange(self.stack_size):
