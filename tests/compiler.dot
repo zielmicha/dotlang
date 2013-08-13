@@ -1,2 +1,5 @@
 "hello world" print
 9 .foo set
+foo. print
+
+{ foo. } call print

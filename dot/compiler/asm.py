@@ -2,14 +2,18 @@ import byteplay as bp
 import marshal
 import types
 
-def assemble(builder):
+def assemble(builder, function=False, freevars=[]):
     code_list = []
+
+    if function:
+        code_list += [(bp.LOAD_FAST, '__args')]
 
     last_lineno = 0
     first_lineno = None
     for op in builder.ops:
         lineno = op[0]
-        if lineno != last_lineno:
+        if lineno > last_lineno:
+            # Python doesn't allow decreasing lineno
             code_list.append((bp.SetLineno, lineno))
             last_lineno = lineno
             if not first_lineno:
@@ -22,12 +26,12 @@ def assemble(builder):
     code_list.append((bp.RETURN_VALUE, None))
     return bp.Code(
         code=code_list,
-        freevars={},
-        args=[],
-        varargs=False,
+        freevars=freevars,
+        args=['__args'] if function else [],
+        varargs=True if function else False,
         varkwargs=False,
         newlocals=True,
-        name='dotlang',
+        name='function' if function else 'module',
         filename=builder.filename,
         firstlineno=first_lineno,
         docstring=None)
@@ -37,6 +41,21 @@ def assemble_const(s):
 
 def assemble_pop():
     return [(bp.POP_TOP, None)]
+
+def assemble_deref(name):
+    return [(bp.LOAD_DEREF, name)]
+
+def assemble_make_lambda(builder):
+    freevars = list(set(builder.names))
+    code = assemble(builder, function=True,
+                    freevars=freevars)
+    ops = []
+    for name in freevars:
+        ops.append((bp.LOAD_CLOSURE, name))
+    ops += [(bp.BUILD_TUPLE, len(freevars)),
+            (bp.LOAD_CONST, code),
+            (bp.MAKE_CLOSURE, 0)]
+    return ops
 
 def assemble_get_ref(name):
     get_code = bp.Code(
@@ -70,45 +89,19 @@ def assemble_get_ref(name):
         (bp.MAKE_CLOSURE, 0),
         (bp.CALL_FUNCTION, 2)]
 
-def assemble_call(name, arg_count):
+def assemble_call(name, arg_count, var_stack):
     call_success = bp.Label()
     end = bp.Label()
-    return [(bp.BUILD_TUPLE, arg_count),
-            # stack = [args]
-            (bp.DUP_TOP, None),
-            # stack = [args, args]
-            (bp.LOAD_GLOBAL, '_dotlang_call'),
-            (bp.ROT_TWO, None),
-            # stack = [args, _dotlang_call, args]
-            (bp.LOAD_CONST, name),
-            # stack = [args, _dotlang_call, args, name]
-            (bp.CALL_FUNCTION, 2),
-            # stack = [args, result]
-            (bp.DUP_TOP, None),
-            # stack = [args, result, result]
-            (bp.LOAD_CONST, NotImplemented), # this opcode doesn't marshal
-            #(bp.LOAD_GLOBAL, 'NotImplemented'), # but this does
-            # stack = [args, result, result, NotImplemented]
-            (bp.COMPARE_OP, 'is'),
-            # stack = [args, result, success?]
-            (bp.POP_JUMP_IF_FALSE, call_success),
-            # stack = [args, result]
-            (bp.POP_TOP, None),
-            # stack = [args]
-            (bp.LOAD_GLOBAL, 'func-' + name),
+    ops = [(bp.BUILD_TUPLE, arg_count),]
+    if var_stack:
+        ops += [(bp.BINARY_ADD, None)]
+    ops += [(bp.LOAD_NAME, 'func-' + name),
             # stack = [args, func]
             (bp.ROT_TWO, None),
             # stack = [func, args]
             (bp.CALL_FUNCTION_VAR, 0),
-            # stack = [result]
-            (bp.JUMP_FORWARD, end),
-            (call_success, None),
-            # stack = [args, result]
-            (bp.ROT_TWO, None),
-            (bp.POP_TOP, None),
-            # stack = [result]
-            (end, None),
         ]
+    return ops
 
 def dump_pyc(py_code):
     magic = '\x03\xf3\r\n'
@@ -132,6 +125,6 @@ if __name__ == '__main__':
     b = dot.compiler.builder.Builder(filename)
     b.add_code(ast)
     bp_code = assemble(b)
-    #print bp_code.code
+    #pprint.pprint(bp_code.code)
     py_code = bp_code.to_code()
     dot.runtime.execute(py_code)

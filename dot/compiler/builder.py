@@ -1,10 +1,11 @@
 
 class Builder:
-    def __init__(self, filename='<none>'):
+    def __init__(self, filename='<none>', function=False):
         self.ops = []
         self.label_i = 0
         self.info = None
         self.stack_size = 0
+        self.var_stack = True if function else False
         self.filename = filename
         self.names = None
         self.cells = None
@@ -33,15 +34,37 @@ class Builder:
     def visit_call(self, name):
         stack = self.stack_size
         self.stack_size = 0
-        self.add_push('call', name, stack)
+        self.add_push('call', name, stack, self.var_stack)
+        self.var_stack = False
 
     def visit_semicolon(self, _):
         for i in xrange(self.stack_size):
             self.add('pop')
         self.stack_size = 0
+        if self.var_stack:
+            self.add('pop')
+        self.var_stack = False
 
     def visit_ref(self, name):
         self.add_push('get_ref', name)
+
+    def visit_deref(self, name):
+        self.add_push('deref', name)
+
+    def visit_expr(self, expr):
+        old_stack_size = self.stack_size
+        old_var_stack = self.var_stack
+        self.var_stack = False
+        self.stack_size = 0
+        self.visit(expr)
+        self.stack_size = old_stack_size
+        self.var_stack = old_var_stack
+
+    def visit_lambda(self, expr):
+        lambda_builder = Builder(function=True)
+        lambda_builder.filename = self.filename
+        lambda_builder.add_code(expr)
+        self.add_push('make_lambda', lambda_builder)
 
     def make_label(self, description='label'):
         self.label_i += 1
@@ -65,11 +88,14 @@ def find_names_and_cells(ast):
             cells.append(val)
         elif kind in ('lambda', 'expr'):
             found = find_names(val)
-            names.append(found)
-            cells.append(found)
-        elif kind == 'call' and val == 'arg':
-            # new scope, discard this closure
-            return []
+            names += found
+            cells += found
+        elif kind == 'call':
+            if val == 'arg':
+                # new scope, discard this closure
+                return [], []
+            else:
+                names.append('func-' + val)
 
     return names, cells
 

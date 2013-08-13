@@ -12,3 +12,9 @@ builtins['_dotlang_call'] = call
 builtins['NotImplemented'] = NotImplemented
 
 builtins['_dotlang_make_ref'] = core.BuiltinRef
+
+def func_while(condition, body):
+    while condition():
+        body()
+
+builtins['func-while'] = func_while

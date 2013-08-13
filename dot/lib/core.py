@@ -156,3 +156,7 @@ dollar_list.call_with_frame = True
 
 builtins['func-$swap'] = dollar_swap
 builtins['func-$list'] = dollar_list
+
+for key, func in builtins.items():
+    if isinstance(func, type(lambda: 0)):
+        func.func_name = key
