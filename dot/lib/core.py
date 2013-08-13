@@ -19,7 +19,18 @@ class Environ(object):
         raise KeyError(key)
 
     def __setitem__(self, key, val):
-        self.data[key] = val
+        if key in self.data:
+            self.data[key] = val
+            return
+        for env in self.parents:
+            if type(env) is Environ and env.can_set(key):
+                env[key] = val
+                break
+        else:
+            self.data[key] = val
+
+    def can_set(self, key):
+        return key in self.data or any( key in parent for parent in self.parents )
 
 class Ref(object):
     def __init__(self, env, name):
