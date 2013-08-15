@@ -1,12 +1,23 @@
 from dot.lib.core import builtins
 from dot.lib import core
 
+import dot.compiler.builder
+import dot.compiler.asm
+import dot.parse
+
 def call(a, b):
     return NotImplemented
 
 def execute(executable):
     globals = {'__builtins__': builtins}
     return eval(executable, globals)
+
+def execute_string(str, filename='<string>'):
+    ast = dot.parse.parse(str)
+    b = dot.compiler.builder.Builder(filename)
+    b.add_code(ast)
+    code = dot.compiler.asm.assemble(b).to_code()
+    return execute(code)
 
 builtins['_dotlang_call'] = call
 builtins['NotImplemented'] = NotImplemented
@@ -33,7 +44,12 @@ def _dotlang_fallback(args, funcname):
         assert len(args) == 1
         return getattr(args[0], funcname[1:])
     else:
-        return getattr(args[0], funcname)(*args[1:])
+        try:
+            func = getattr(args[0], funcname)
+        except (AttributeError, IndexError):
+            raise AttributeError('function %s not found' % funcname)
+        else:
+            return func(*args[1:])
 
 builtins['_dotlang_fallback'] = _dotlang_fallback
 

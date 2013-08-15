@@ -1,5 +1,4 @@
 from dot.lib import core
-from dot import runtime
 
 class Builder:
     def __init__(self, filename='<none>', function=False,
