@@ -8,8 +8,13 @@ if os.environ.get('DOTLANG_INTERPRETED'):
     def run_string(s):
         code = parse(s)
         return RootFrame(Environ(parents=[builtins]), code).run()
+
+    def run_file(path):
+        stdin = open(path)
+        run_string(stdin.read())
 else:
     from dot.runtime import execute_string as run_string
+    from dot.runtime import execute_file as run_file
 
 def repl():
     import traceback
@@ -49,8 +54,7 @@ def main():
     if len(sys.argv) == 1:
         repl()
     else:
-        stdin = open(sys.argv[1])
-        run_string(stdin.read())
+        run_file(sys.argv[1])
 
 if __name__ == '__main__':
     main()

@@ -1,15 +1,20 @@
 
 .func-inc def { .var arg
-    .var call 1 add .var set
+    var. call 1 add var. set
+}
+
+.func-dec def { .var arg
+    var. call 1 sub var. set
 }
 
 .func-dotimes def { .times .func arg
-    .(times. 0 geq) while {
+    .(times. 0 ge) while {
          func. call
+         .times dec
     }
 }
 
 # todo: vararg
 .func-partial def { .arg0 .func arg
-    .(.arg0 func)
+    .(arg0. func. call)
 }
