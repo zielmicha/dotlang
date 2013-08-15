@@ -1,0 +1,43 @@
+# This is Hello World program in Dotlang
+"Hello world!" "Hello world!" eq assert
+
+1 .foo set
+foo. 1 eq assert
+
+(1 2 add) 3 eq assert
+
+.("lambda") .func-my set
+my "lambda" eq assert
+
+.func-a def {
+    "func-a result"
+}
+1 2 a "func-a result" eq assert
+
+1000 .counter set
+.(counter. 0 neq) while {
+    counter. 1 sub .counter set
+}
+
+.func-greeter def { .name arg
+    "hello " name. add
+}
+
+"Michał" greeter "hello Michał" eq assert
+
+0 .foo set
+.func-test def { arg
+    1 .foo set
+    3
+}
+test
+foo. 1 eq assert
+1 0 neq assert
+
+"1 2 3" split map { int } sum 6 eq assert
+1 2 3 list multi { len } { sum } map { 2 mul } | 6 12 list eq assert
+1 2 3 list | 6 7 8 list map { add } | 7 9 11 list eq assert
+
+1 2 3 list $list add 6 eq assert
+
+9 .a set; a. 9 eq assert
