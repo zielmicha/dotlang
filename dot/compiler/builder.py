@@ -1,4 +1,5 @@
 from dot.lib import core
+from collections import namedtuple
 
 class Builder:
     def __init__(self, filename='<none>', function=False,
@@ -48,16 +49,20 @@ class Builder:
     def visit_call(self, name):
         stack = self.stack.size
         if name == 'arg':
+            if any( not isinstance(val, Ref)
+                    for val in self.stack.get_values() ):
+                raise ValueError('expected only refereces on stack %s'
+                                 % self.stack.get_values())
+            refs = [ val.name for val in self.stack.get_values() ]
             self.free_names = set(self.upper_names)
-            self.free_names -= set(self.stack.get_refs())
-            self.toplevel_names = set(self.toplevel_names) \
-                                  - set(self.stack.get_refs())
+            self.free_names -= set(refs)
+            self.toplevel_names = (set(self.toplevel_names)
+                                  - set(refs))
             self.free_names -= set(self.toplevel_names)
             # discard everything before
             self.ops = []
             self.add('call_arg',
-                     [ (ref, ref in self.cells)
-                       for ref in self.stack.get_refs() ])
+                     [ (ref, ref in self.cells) for ref in refs ])
             self.stack.clean()
         elif name == '$list':
             if not stack:
@@ -87,7 +92,7 @@ class Builder:
 
     def visit_ref(self, name):
         self.add('get_ref', name, name in self.toplevel_names)
-        self.stack.push_item(name)
+        self.stack.push_item(Ref(name))
 
     def visit_deref(self, name):
         self.add_push('deref', name, name in self.toplevel_names,
@@ -125,6 +130,8 @@ class Builder:
     @property
     def var_stack(self): raise NotImplementedError()
 
+Ref = namedtuple('Ref', 'name')
+
 class Stack:
     def __init__(self):
         self.stack = []
@@ -136,7 +143,10 @@ class Stack:
     def size(self):
         return len(self.stack)
 
-    def get_refs(self):
+    def get_values(self):
+        if any( item is None for item in self.stack ):
+            raise ValueError('tried to get values on uncertain stack'
+                             ' %s' % (self.stack, ))
         return self.stack
 
     def clean(self):
