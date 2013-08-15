@@ -1,8 +1,7 @@
 "hello world" print
 9 .foo set
-foo. print
 
-{ foo. } call print
+{ foo. } call 9 eq assert
 
 22 .i set
 
@@ -18,11 +17,4 @@ foo. print
 
 11 .i set
 8 t
-i. print
 i. 11 eq assert
-
-.func-madd def { .a .b arg
-    .(a. 0 eq) if { b. } { (a. 1 add) (b. 1 sub) madd }
-}
-
-1 3 madd 4 print

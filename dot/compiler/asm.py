@@ -136,7 +136,7 @@ def assemble_call(name, arg_count, var_stack, toplevel):
 
 def assemble_call_arg(refs):
     ops = [
-        (bp.LOAD_CONST, refs),
+        (bp.LOAD_CONST, tuple( k for k, _ in refs )),
         (bp.LOAD_NAME, '_dotlang_arg'),
         (bp.ROT_THREE, None),
         (bp.CALL_FUNCTION, 2),
@@ -189,6 +189,6 @@ if __name__ == '__main__':
     b = dot.compiler.builder.Builder(filename)
     b.add_code(ast)
     bp_code = assemble(b)
-    #pprint.pprint(bp_code.code[9][1].freevars)
+    #pprint.pprint(bp_code.code[9][1].code)
     py_code = bp_code.to_code()
     dot.runtime.execute(py_code)

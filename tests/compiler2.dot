@@ -1,0 +1,6 @@
+
+.func-madd def { .a .b arg
+    b. 0 eq if { a. } { (a. 1 add) (b. 1 sub) madd }
+}
+
+1 3 madd 4 eq assert

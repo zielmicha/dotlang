@@ -6,5 +6,6 @@ sys.path.append(root)
 
 from dot.runtime import execute_file
 
-for name in ['basic', 'dot_builtins']:
+for name in ['basic', 'dot_builtins', 'compiler', 'compiler1',
+             'compiler2']:
     execute_file('%s/tests/%s.dot' % (root, name))

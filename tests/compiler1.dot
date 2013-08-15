@@ -1,6 +1,6 @@
 
 .func-t def { .i arg
-    i. 8 print
+    i. 8 eq assert
 }
 
 11 .i set
