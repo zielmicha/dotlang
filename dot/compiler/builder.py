@@ -7,8 +7,10 @@ class Builder:
         self.ops = []
         self.label_i = 0
         self.info = None
-        self.stack_size = 0
-        self.var_stack = True if function else False
+
+        self.stack = Stack()
+        self.stack.var_stack = function
+
         self.filename = filename
         self.names = None
         self.cells = None
@@ -16,7 +18,6 @@ class Builder:
         self.toplevel_names = toplevel_names
         self.upper_names = upper_names
         self.free_names = None
-        self.ref_stack = []
 
     def add_code(self, ast):
         assert self.names is None, 'call add_code once'
@@ -45,20 +46,19 @@ class Builder:
         self.add_push('const', int(n))
 
     def visit_call(self, name):
-        stack = self.stack_size
+        stack = self.stack.size
         if name == 'arg':
-            self.stack_size = 0
-            if len(self.ref_stack) != stack:
-                raise ValueError('arg not expected here (or not given reference, stack=%d, refs=%s)' % (
-                    stack, self.ref_stack))
             self.free_names = set(self.upper_names)
-            self.free_names -= set(self.ref_stack)
-            self.toplevel_names = set(self.toplevel_names) - set(self.ref_stack)
+            self.free_names -= set(self.stack.get_refs())
+            self.toplevel_names = set(self.toplevel_names) \
+                                  - set(self.stack.get_refs())
             self.free_names -= set(self.toplevel_names)
             # discard everything before
             self.ops = []
-            self.add('call_arg', [ (ref, ref in self.cells) for ref in self.ref_stack ])
-            self.var_stack = False
+            self.add('call_arg',
+                     [ (ref, ref in self.cells)
+                       for ref in self.stack.get_refs() ])
+            self.stack.clean()
         elif name == '$list':
             if not stack:
                 raise ValueError('cannot call $list on empty (or variable) stack')
@@ -69,38 +69,36 @@ class Builder:
                 self.add('make_var_stack', stack - 1)
             self.add('load_helper', '__unpack')
             self.add('merge_var_args_list')
-            self.var_stack = True
-            self.stack_size = 0
+            self.stack.clean()
+            self.stack.var_stack = True
         else:
-            self.stack_size = 0
-            self.add_push('call', name, stack, self.var_stack,
+            var_stack = self.stack.var_stack
+            self.stack.clean()
+            self.add_push('call', name, stack, var_stack,
                           name in self.toplevel_names)
-            self.var_stack = False
+            self.stack.var_stack = False
 
     def visit_semicolon(self, _):
-        for i in xrange(self.stack_size):
+        for i in xrange(self.stack.size):
             self.add('pop')
-        self.stack_size = 0
-        if self.var_stack:
+        if self.stack.var_stack:
             self.add('pop')
-        self.var_stack = False
+        self.stack.clean()
 
     def visit_ref(self, name):
-        self.ref_stack.append(name)
-        self.add_push('get_ref', name, name in self.toplevel_names)
+        self.add('get_ref', name, name in self.toplevel_names)
+        self.stack.push_item(name)
 
     def visit_deref(self, name):
         self.add_push('deref', name, name in self.toplevel_names,
                       name in self.cells)
 
     def visit_expr(self, expr):
-        old_stack_size = self.stack_size
-        old_var_stack = self.var_stack
+        self.stack.push_frame()
         self.var_stack = False
         self.stack_size = 0
         self.visit(expr)
-        self.stack_size += old_stack_size
-        self.var_stack = old_var_stack
+        self.stack.pop_frame()
 
     def visit_lambda(self, expr):
         lambda_builder = Builder(function=True,
@@ -115,11 +113,49 @@ class Builder:
         return '%s_%d' % (description, label_i)
 
     def add_push(self, *args):
-        self.stack_size += 1
+        self.stack.push_item(None)
         self.add(*args)
 
     def add(self, *args):
         self.ops.append((self.info, ) + args)
+
+    @property
+    def stack_size(self): raise NotImplementedError()
+
+    @property
+    def var_stack(self): raise NotImplementedError()
+
+class Stack:
+    def __init__(self):
+        self.stack = []
+        self.var_stack = None
+
+        self.frame_stack = []
+
+    @property
+    def size(self):
+        return len(self.stack)
+
+    def get_refs(self):
+        return self.stack
+
+    def clean(self):
+        self.stack = []
+        self.var_stack = False
+
+    def push_item(self, val):
+        self.stack.append(val)
+
+    def push_frame(self):
+        self.frame_stack.append((self.stack, self.var_stack))
+        self.stack = []
+        self.var_stack = False
+
+    def pop_frame(self):
+        stack, var_stack = self.frame_stack.pop()
+        stack += self.stack
+        self.var_stack = var_stack
+        self.stack = stack
 
 def find_names_and_cells(ast):
     names = []
