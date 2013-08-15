@@ -1,0 +1,15 @@
+
+.func-inc def { .var arg
+    .var call 1 add .var set
+}
+
+.func-dotimes def { .times .func arg
+    .(times. 0 geq) while {
+         func. call
+    }
+}
+
+# todo: vararg
+.func-partial def { .arg0 .func arg
+    .(.arg0 func)
+}

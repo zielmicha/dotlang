@@ -1,0 +1,6 @@
+
+0 .i set
+1000 dotimes { inc .i }
+i. 1000 eq assert
+
+5 add partial 4 call 9 eq assert

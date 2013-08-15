@@ -5,21 +5,41 @@ import dot.compiler.builder
 import dot.compiler.asm
 import dot.parse
 
-def call(a, b):
-    return NotImplemented
+import sys
+import os
 
-def execute(executable):
-    globals = {'__builtins__': builtins}
+def init():
+    if '-dot-builtins' not in builtins:
+        builtins['-dot-builtins'] = True
+        execute_import('dot.builtins', globals=builtins)
+
+def execute(executable, globals=None):
+    init()
+    if not globals:
+        globals = {'__builtins__': builtins}
     return eval(executable, globals)
 
-def execute_string(str, filename='<string>'):
+def execute_string(str, filename='<string>', globals=None):
     ast = dot.parse.parse(str)
     b = dot.compiler.builder.Builder(filename)
     b.add_code(ast)
     code = dot.compiler.asm.assemble(b).to_code()
-    return execute(code)
+    return execute(code, globals=globals)
 
-builtins['_dotlang_call'] = call
+def execute_file(filename, **kwargs):
+    with open(filename) as f: text = f.read()
+    return execute_string(text, filename, **kwargs)
+
+def execute_import(module, **kwargs):
+    # todo: something better
+    path = module.replace('.','/') + '.dot'
+    for pypath in sys.path:
+        file_path = pypath + '/' + path
+        if os.path.exists(file_path):
+            return execute_file(file_path, **kwargs)
+    else:
+        return ImportError('couldn\'t find dot module %s' % module)
+
 builtins['NotImplemented'] = NotImplemented
 
 builtins['_dotlang_make_ref'] = core.BuiltinRef

@@ -4,6 +4,8 @@ dotlang
 New language for Python VM.
 It's a bit different - it's probably closest to stack-based languages.
 
+Requires Byteplay (pip install byteplay) for compilation to Python bytecode.
+
 Sample
 ---------------------
 
