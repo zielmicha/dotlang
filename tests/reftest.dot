@@ -1,0 +1,13 @@
+
+.func-a def { .i arg
+    i. if {
+        i. .v set
+        "start" .i i. print
+        (i. 1 sub) a
+        (i. 1 sub) a
+        i. .v set
+        "end" .i i. print
+    }
+}
+
+2 a
