@@ -9,9 +9,9 @@
        seq. len 2 intdiv .split set
        0 split. seq. slice mergesort .a set
        split. seq. slice mergesort .b set
-       a. b. merge .tmp set
+      a. b. merge .tmp set
 	   tmp.
-    }
+    } "<< mergesort" seq. log-by
 }
 
 .func-merge def { .a .b arg

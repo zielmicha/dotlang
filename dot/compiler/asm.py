@@ -171,12 +171,11 @@ def dump_pyc(py_code):
     timestamp = '\0\0\0\0'
     return magic + timestamp + marshal.dumps(py_code)
 
-
-if __name__ == '__main__':
-    from sys import argv, stdin
+def assemble_test_main():
     import dot.parse
     import dot.compiler.builder
     import dot.runtime
+    from sys import argv, stdin
 
     import pprint
 
@@ -189,6 +188,8 @@ if __name__ == '__main__':
     b = dot.compiler.builder.Builder(filename)
     b.add_code(ast)
     bp_code = assemble(b)
-    #pprint.pprint(bp_code.code[9][1].code)
+    return bp_code
+
+if __name__ == '__main__':
     py_code = bp_code.to_code()
     dot.runtime.execute(py_code)
