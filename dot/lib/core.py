@@ -1,3 +1,4 @@
+from __future__ import division
 from functools import partial
 import operator
 
@@ -69,13 +70,18 @@ def reducer(a):
 
 builtins['func-add'] = reducer(lambda a, b: a + b)
 builtins['func-mul'] = reducer(lambda a, b: a * b)
+builtins['func-div'] = lambda a, b: a / b
+builtins['func-intdiv'] = lambda a, b: a // b
+
 builtins['func-sub'] = lambda a, b: a - b
 builtins['func-neq'] = lambda a, b: a != b
 builtins['func-eq'] = lambda a, b: a == b
 builtins['func-leq'] = lambda a, b: a <= b
-builtins['func-le'] = lambda a, b: a < b
+# TODO: one name
+builtins['func-lt'] = builtins['func-le'] = lambda a, b: a < b
 builtins['func-geq'] = lambda a, b: a >= b
-builtins['func-ge'] = lambda a, b: a > b
+# TODO: one name
+builtins['func-gt'] = builtins['func-ge'] = lambda a, b: a > b
 builtins['func-not'] = lambda a: not a
 
 builtins['func-int'] = lambda x: int(x)
@@ -83,6 +89,9 @@ builtins['func-sum'] = sum
 builtins['func-len'] = len
 builtins['func-abs'] = abs
 builtins['func-at'] = lambda x, val: x[val]
+
+builtins['func-or'] = lambda a, b: a or b
+builtins['func-and'] = lambda a, b: a and b
 
 class AtRef(object):
     def __init__(self, x, key):
@@ -171,3 +180,39 @@ builtins['func-$list'] = dollar_list
 for key, func in builtins.items():
     if isinstance(func, type(lambda: 0)):
         func.func_name = key
+
+def func_next(obj):
+    return obj[0], obj[1:] # TODO
+
+builtins['func-next'] = func_next
+
+def func_first(obj):
+    return obj[0] # TODO
+
+builtins['func-first'] = func_first
+
+def func_slice(start, end, seq=None):
+    if seq is None:
+        seq = end
+        end = len(seq)
+    return seq[start: end]
+
+builtins['func-slice'] = func_slice
+
+def func_listref(*args):
+    def fset(setargs):
+        assert len(args) == len(setargs)
+        for arg, setarg in zip(args, setargs):
+            arg.set(setarg)
+
+    return BuiltinRef(fget=lambda: args,
+                      fset=fset)
+
+builtins['func-listref'] = func_listref
+builtins['func-push'] = lambda item, obj: obj.append(item)
+
+def func_log_by(val, *args):
+    builtins['func-print'](val, *args)
+    return val
+
+builtins['func-log-by'] = func_log_by

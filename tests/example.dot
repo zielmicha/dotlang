@@ -5,33 +5,39 @@
 }
 
 .func-mergesort def { .seq arg
-    seq. length 1 eq if { seq. return }
-    seq. length 2 intdiv .split set
-    0 split. seq. slice mergesort .a set
-    split. seq slice mergesort .b set
-    a. b. merge
+    seq. len 1 eq if { seq. } {
+       seq. len 2 intdiv .split set
+       0 split. seq. slice mergesort .a set
+       split. seq. slice mergesort .b set
+       a. b. merge .tmp set
+	   tmp.
+    }
 }
 
 .func-merge def { .a .b arg
-    vector .out set
-    .( a. b. or ) while {
-        a. first | b. first greater if {
+    list .out set
+    .( a. b. and ) while {
+        a. first | b. first gt if {
             .a .b swap
         }
         .a iternext out. push
     }
-    .out return
+    a. out. extend
+    b. out. extend
+    out.
 }
 
 # something like pop macro
 
 .func-iternext def { .iter arg
-    iter. call next (.item .iternext list) set
+    iter. call next (.item .iternext listref) set
     iternext. iter. set
-    item. return
+    item.
 }
 .func-swap def { .a .b arg
     a. call .tmp set
     b. call a. set
     tmp. b. set
 }
+
+1 3 2 list mergesort print

@@ -65,15 +65,16 @@ def _dotlang_fallback(args, funcname):
         return getattr(args[0], funcname[1:])
     else:
         try:
-            func = getattr(args[0], funcname)
+            func = getattr(args[-1], funcname)
         except (AttributeError, IndexError):
-            raise AttributeError('function %s not found' % funcname)
+            raise AttributeError('function %s not found (args %r)'
+                                 % (funcname, args))
         else:
-            return func(*args[1:])
+            return func(*args[:-1])
 
 builtins['_dotlang_fallback'] = _dotlang_fallback
 
-def func_if(cond, then, else_):
+def func_if(cond, then, else_=None):
     if cond:
         return then()
     elif else_:
