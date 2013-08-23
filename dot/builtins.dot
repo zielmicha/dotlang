@@ -18,3 +18,15 @@
 .func-partial def { .arg0 .func arg
     .(arg0. func. call)
 }
+
+.func-iternext def { .iter arg
+    iter. call next (.item .iternext listref) set
+    iternext. iter. set
+    item.
+}
+
+.func-swap def { .a .b arg
+    a. call .tmp set
+    b. call a. set
+    tmp. b. set
+}

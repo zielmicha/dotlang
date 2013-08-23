@@ -1,5 +1,4 @@
 #!/usr/bin/env dotlang
-"hello world" print;
 .func-printhelloworld def { arg
     "hello world" print
 }
@@ -11,7 +10,7 @@
        split. seq. slice mergesort .b set
       a. b. merge .tmp set
 	   tmp.
-    } "<< mergesort" seq. log-by
+    }
 }
 
 .func-merge def { .a .b arg
@@ -29,15 +28,5 @@
 
 # something like pop macro
 
-.func-iternext def { .iter arg
-    iter. call next (.item .iternext listref) set
-    iternext. iter. set
-    item.
-}
-.func-swap def { .a .b arg
-    a. call .tmp set
-    b. call a. set
-    tmp. b. set
-}
-
-1 3 2 list mergesort print
+1 3 2 1 2 3 4 4 0 0 list mergesort (
+  0 0 1 1 2 2 3 3 4 4 list) eq assert
