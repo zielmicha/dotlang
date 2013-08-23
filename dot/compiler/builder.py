@@ -16,19 +16,36 @@ class Builder:
         self.names = None
         self.cells = None
         self.function = function
-        self.toplevel_names = toplevel_names
+        self.toplevel_names = frozenset(toplevel_names)
         self.upper_names = upper_names
         self.free_names = None
 
     def add_code(self, ast):
         assert self.names is None, 'call add_code once'
-        self.names, self.here_names, self.cells = find_names_and_cells(ast)
+        self.names, self.here_names, self.cells = map(frozenset, find_names_and_cells(ast))
         if not self.function:
-            self.toplevel_names += self.here_names
+            self.toplevel_names |= self.here_names
             # just for performance (really helps?)
-            self.toplevel_names += core.builtins.keys()
-        self.free_names = set(self.names) - set(self.toplevel_names)
+            #self.toplevel_names |= set(core.builtins.keys())
+        self.free_names = frozenset(set(self.names) - set(self.toplevel_names))
         self.visit(ast)
+
+    def call_arg(self):
+        if any( not isinstance(val, Ref)
+                    for val in self.stack.get_values() ):
+                raise ValueError('expected only refereces on stack %s'
+                                 % self.stack.get_values())
+        refs = [ val.name for val in self.stack.get_values() ]
+        self.free_names = frozenset(self.upper_names) & self.names
+        self.free_names -= frozenset(refs)
+        self.toplevel_names = frozenset(set(self.toplevel_names)
+                                        - set(refs))
+        self.free_names -= frozenset(self.toplevel_names)
+        # discard everything before
+        self.ops = []
+        self.add('call_arg',
+                [ (ref, ref in self.cells) for ref in refs ])
+        self.stack.clean()
 
     def visit(self, ast):
         assert self.names is not None, 'call add_code, not visit'
@@ -49,21 +66,7 @@ class Builder:
     def visit_call(self, name):
         stack = self.stack.size
         if name == 'arg':
-            if any( not isinstance(val, Ref)
-                    for val in self.stack.get_values() ):
-                raise ValueError('expected only refereces on stack %s'
-                                 % self.stack.get_values())
-            refs = [ val.name for val in self.stack.get_values() ]
-            self.free_names = set(self.upper_names)
-            self.free_names -= set(refs)
-            self.toplevel_names = (set(self.toplevel_names)
-                                  - set(refs))
-            self.free_names -= set(self.toplevel_names)
-            # discard everything before
-            self.ops = []
-            self.add('call_arg',
-                     [ (ref, ref in self.cells) for ref in refs ])
-            self.stack.clean()
+            self.call_arg()
         elif name == '$list':
             if not stack:
                 raise ValueError('cannot call $list on empty (or variable) stack')
@@ -108,7 +111,7 @@ class Builder:
     def visit_lambda(self, expr):
         lambda_builder = Builder(function=True,
                                  toplevel_names=self.toplevel_names,
-                                 upper_names=self.names)
+                                 upper_names=self.here_names)
         lambda_builder.filename = self.filename
         lambda_builder.add_code(expr)
         self.add_push('make_lambda', lambda_builder)
@@ -171,6 +174,7 @@ def find_names_and_cells(ast):
     names = []
     cells = []
     here_names = []
+    new_scope = False
     for kind, val, info in ast:
         if kind == 'ref':
             names.append(val)
@@ -180,19 +184,20 @@ def find_names_and_cells(ast):
             here_names.append(val)
             cells.append(val)
         elif kind in ('lambda', 'expr'):
-            found = find_names(val)
-            names += found
-            cells += found
+            f_names, f_here_names, f_cells = find_names_and_cells(val)
+            here_names += f_here_names
+            names += f_names
+            cells += f_names
         elif kind == 'call':
             if val == 'arg':
                 # new scope, discard this closure
                 # hmm...
-                pass
+                new_scope = True
             else:
-                here_names.append(val)
                 names.append('func-' + val)
+                here_names.append('func-' + val)
 
-    return names, here_names, cells
+    return names, [] if new_scope else here_names, cells
 
 def find_names(ast):
     return find_names_and_cells(ast)[0]

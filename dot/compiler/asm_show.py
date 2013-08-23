@@ -14,8 +14,17 @@ id_save = {}
 def escape(v):
     val = cgi.escape(repr(v))
     if isinstance(v, bp.Label):
-        color = 0x111111 + (mhash(id(v)) % 0xDDDDDD)
+        color = 0x111111 + (mhash(v) % 0xDDDDDD)
         return '<font color=#%s>%s</font>' % (color, val)
+    elif isinstance(v, bp.Opcode):
+        color = 'black'
+        if val.startswith(('POP_', 'ROT_')):
+            color = '#cccccc'
+        if v == bp.LOAD_CONST:
+            return '<b>%s</b>' % val
+        return '<font color=%s>%s</font>' % (color, val)
+    elif v is None:
+        return ''
     elif isinstance(v, bp.Code):
         id_save[id(v)] = v
         return '<a href="/%d">%s</a>' % (id(v), val)
