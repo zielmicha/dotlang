@@ -29,6 +29,7 @@ def repl():
     atexit.register(readline.write_history_file, histfile)
     del os, histfile
 
+    globals = {}
     while True:
         try:
             s = raw_input('> ')
@@ -37,7 +38,7 @@ def repl():
         if not s.strip():
             continue
         try:
-            print repr(run_string(s))
+            print repr(run_string(s, globals=globals))
         except:
             exc_type, exc_value, exc_tb = sys.exc_info()
             exc_tb = skip_frames(exc_tb, 3)
